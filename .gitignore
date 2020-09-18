@@ -1,0 +1,7 @@
+.*
+dist
+**/tags
+**/__pycache__
+**/*.pyc
+*egg-info*
+!.gitignore
