@@ -808,8 +808,6 @@ class Serie(SerieHeader):
         self.f.seek(self.getOffset(**dimensionsIncrements))
         return self.f.read(self.getNbPixelsPerSlice())
 
-
-
     def getFrame(self, T=0, channel=0, dtype=np.uint8):
         """
         Return a numpy array (C order, thus last index is X):
@@ -824,9 +822,6 @@ class Serie(SerieHeader):
             self.f.seek(self.getOffset(T=T, Z=z) + self.getChannelOffset(channel))
             zyx[z] = np.fromfile(self.f, dtype=dtype, count=int(self.getNbPixelsPerSlice())).reshape(self.get2DShape())
         return zyx
-
-
-
 
     def getFrame2D(self, channel=0, T=0, dtype=np.uint8):
         """
@@ -847,7 +842,49 @@ class Serie(SerieHeader):
         cyx = np.array(cyx)
         return cyx[channel]
 
+    def getXYC(self, T=0, dtype=np.uint8):
+        """
+        Get a 3D image whose shape is (X, Y, channel_number).
+            This is typically used to read a multiple-channeled 2D scan
 
+        Args:
+            T (int): The frame number (time index).
+            dtype (type): the datatype of the pixel intensities.
+                Leica use uint8 by default, but after the deconvolution
+                the datatype is np.uint16.
+
+        Return:
+            np.ndarray: 3D array shape:  (X, Y, channel_number).
+        """
+        n_channels = len(self.getChannels())
+        shape = list(self.get2DShape()) + [n_channels]
+        self.f.seek(self.getOffset(**dict({'T': T})))
+        xyc = np.fromfile(
+            self.f, dtype=dtype,
+            count=int(self.getNbPixelsPerSlice()) * n_channels
+        )
+        xyc = xyc.reshape(shape)
+        return xyc
+
+    def getXYZ(self, T=0, channel=0, dtype=np.uint8):
+        """
+        Get a 3D image whose shape is (X, Y, Z).
+            This is typically used to read a 3D confocal image.
+
+        Args:
+            T (int): The frame number (time index), default value is 0.
+            channel (int): the channel index, default value is 0.
+            dtype (type): the datatype of the pixel intensities.
+                Leica use uint8 by default, but after the deconvolution
+                the datatype is np.uint16.
+
+        Return:
+            np.ndarray: 3D array shape:  (X, Y, Z).
+        """
+        zyx = self.getFrame(T=T, channel=channel, dtype=dtype)
+        yxz = np.moveaxis(zyx, 0, -1)
+        xyz = np.moveaxis(yxz, 0, 1)
+        return xyz
 
     def getMetadata(self):
         """
