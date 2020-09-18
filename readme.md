@@ -9,6 +9,8 @@ Load 3D confocal images from `lif` files as `numpy` arrays.
 
 ## How to Use It
 
+### For 3D Image
+
 ```python
 from explore_lif import Reader
 
@@ -16,12 +18,19 @@ reader = Reader('lif_file.lif')
 series = reader.getSeries()
 chosen = series[0]  # choose first image in the lif file
 # get a numpy array corresponding to the 1st time point & 1st channel
-# the shape is (z, y, x)
-image = chosen.getFrame(T=0, channel=0)
+# the shape is (x, y, z)
+image = chosen.getXYZ(T=0, channel=0)
 ```
 
-## Version Issue
+### For 2D Image with Multiple Channels
 
-The current code (version >= 3.1) returns the data in the order of `Z-Y-X`. ([ce240f6](https://github.com/MathieuLeocmach/read_lif/commit/ce240f66fc5c9f42b25cdfec0ea7bd62506b8628))
+```python
+from explore_lif import Reader
 
-This is DIFFERENT from previous version, where the data is returned as `X-Y-Z`
+reader = Reader('lif_file.lif')
+series = reader.getSeries()
+chosen = series[0]  # choose first image in the lif file
+# get a numpy array corresponding to the 1st time point & 1st channel
+# the shape is (x, y, channel_number)
+image = chosen.getXYC(T=0)
+```
