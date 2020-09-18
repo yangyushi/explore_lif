@@ -30,7 +30,7 @@ from explore_lif import Reader
 reader = Reader('lif_file.lif')
 series = reader.getSeries()
 chosen = series[0]  # choose first image in the lif file
-# get a numpy array corresponding to the 1st time point & 1st channel
+# get a numpy array corresponding to the 1st time point
 # the shape is (x, y, channel_number)
 image = chosen.getXYC(T=0)
 ```
