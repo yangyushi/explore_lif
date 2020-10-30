@@ -950,6 +950,60 @@ class Serie(SerieHeader):
             'frame_number': self.getNbFrames(),
         }
 
+
+    def getMetadata2D(self):
+        """
+        voxel size unit: µm, working with a 2D slice
+        """
+        nbx, nby = self.getBoxShape()
+        setting_records = self.root.getElementsByTagName('ScannerSettingRecord')
+        dimension_descriptions = self.root.getElementsByTagName('DimensionDescription')
+        if setting_records:
+            # ScannerSettingRecord only available for some lif files!
+            psx = self.getVoxelSize(1)  # m ---> µm
+            psy = self.getVoxelSize(2)  # m ---> µm
+            unit_x = [s.getAttribute('Unit') for s in setting_records if s.getAttribute('Identifier') == 'dblVoxelX'][0]
+            unit_y = [s.getAttribute('Unit') for s in setting_records if s.getAttribute('Identifier') == 'dblVoxelY'][0]
+            units = [unit_x, unit_y]
+        elif dimension_descriptions:
+            # Use DimensionDescription to get voxel information
+            length_x = float(
+                [d.getAttribute('Length') for d in dimension_descriptions if d.getAttribute('DimID') == '1'][0])
+            length_y = float(
+                [d.getAttribute('Length') for d in dimension_descriptions if d.getAttribute('DimID') == '2'][0])
+            number_x = float(
+                [d.getAttribute('NumberOfElements') for d in dimension_descriptions if d.getAttribute('DimID') == '1'][
+                    0])
+            number_y = float(
+                [d.getAttribute('NumberOfElements') for d in dimension_descriptions if d.getAttribute('DimID') == '2'][
+                    0])
+            psx = length_x / number_x
+            psy = length_y / number_y
+            units = [s.getAttribute('Unit') for s in dimension_descriptions]
+        else:
+            raise RuntimeError("Can't find voxel information in the lif file!")
+
+        if len(set(units)) == 1 and 'm' in units:
+            factor = 1e6
+            unit = 'um'
+        else:
+            warnings.warn('unit is not meter, check the unit of voxel size')
+            factor = 1
+            unit = ", ".join(units)
+
+        psx = psx * factor  # m ---> µm
+        psy = psy * factor  # m ---> µm
+
+        return {
+            'voxel_size_x': psx,
+            'voxel_size_y': psy,
+            'voxel_size_unit': unit,
+            'voxel_number_x': nbx,
+            'voxel_number_y': nby,
+            'channel_number': len(self.getChannels()),
+            'frame_number': self.getNbFrames(),
+        }
+
     def saveXML(self, name=None):
         if not name:
             name = '{}.xml'.format(self.getName())
